@@ -6,3 +6,5 @@ This is a merchant frontend application, to enable user to input and show transa
 Currently will be built as a CLI application using python3.
 
 Dependencies: python3+, pyscard, requests 
+
+*NOTE : currently under heavy development and no usable code available yet*
