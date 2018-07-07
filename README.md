@@ -11,4 +11,4 @@ Currently will be built as a CLI application using python2.7x and python3 (compa
 
 Dependencies: python2.7x/3x, pyscard, requests 
 
-*NOTE : see [wiki](https://github.com/stellitecoin/stellite-card-reader/wiki/StelliteCard-reader-WIKI) on how to use thi application *
+NOTE : see [wiki page](https://github.com/stellitecoin/stellite-card-reader/wiki/StelliteCard-reader-WIKI) on how to use this application 
