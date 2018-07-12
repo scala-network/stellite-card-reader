@@ -7,8 +7,8 @@ Usage are extra easy. You (merchant) input some XTL amount to be paid, payer tap
 
 The smartcard reader can be use any [PC/SC API](https://en.wikipedia.org/wiki/PC/SC) compatible smartcard readers. The software main function is to push back and forth encrypted data between stellitepay server and stellite-card-applet enabled javacard.
 
-Currently will be built as a CLI application using python3.
+Currently will be built as a CLI application using python2.7x and python3 (compatible for both).
 
-Dependencies: python3+, pyscard, requests 
+Dependencies: python2.7x/3x, pyscard, requests 
 
-*NOTE : currently under development and no usable code available yet*
+NOTE : see [wiki page](https://github.com/stellitecoin/stellite-card-reader/wiki/StelliteCard-reader-WIKI) on how to use this application 
