@@ -86,7 +86,7 @@ def stelliteCard_select(connection):
     else:
         return True 
         
-def stelliteCard_scanReaders(connection):
+def stelliteCard_getVersion(connection):
 	apdu = [0xB0, 0x30 , 0x00 , 0x00 , 0x00]
 	for j in range(4):
 		try:
@@ -126,11 +126,7 @@ def stelliteCard_reqTxsEncrypt(connection, destAddress, txsType, txsAmount):
 		return result[0]  
 		
 def stelliteCard_verifyTxs(connection, txsSignature):
-	txsSignature = list(txsSignature)
-	txsSignatureInt = []	
-	for i in range(0,128):
-		txsSignatureInt.append(ord(txsSignature[i]))	
-	apdu = [0xB0, 0x32 , 0x00 , 0x00 , 0x80] + txsSignatureInt
+	apdu = [0xB0, 0x32 , 0x00 , 0x00 , 0x80] + txsSignature[0:128]
 	for j in range(4):
 		try:
 			result = reader_c_apdu(connection, apdu)
@@ -142,11 +138,8 @@ def stelliteCard_verifyTxs(connection, txsSignature):
 	response = [result[1]] + [result[2]]
 	if response != [0x90, 0x00]: 		
 		return False
-	else:
-		txsSignatureInt = []
-		for i in range(128,256):
-			txsSignatureInt.append(ord(txsSignature[i]))		
-		apdu = [0xB0, 0x32 , 0x00 , 0x01 , 0x80] + txsSignatureInt
+	else:		
+		apdu = [0xB0, 0x32 , 0x00 , 0x01 , 0x80] + txsSignature[128:256]
 		for j in range(4):
 			try:
 				result = reader_c_apdu(connection, apdu)

@@ -43,14 +43,14 @@ MERCHANT_ADDR = "Se3NS696nhRVk4Ye9vH9QQ7i6LdMXSFQd93GaeirdbUicnefP2GrVKnMhvsMgja
 
 # app configuration
 
-url= 'http://localhost:4000/transfer'
+url= 'http://localhost:4000/'
 headers = {'User-Agent': 'Mozilla/5.0'}
 cardVersion = "StelliteCard-v1.0"
 
 # exit message
 
 def exit_message(input_text):
-    print(input_text + ' press q to exit')
+    print(input_text + '\n\npress q to exit')
     while sys.stdin.readline() != 'q\n':
         print("\n")
         print('press q to exit...')
@@ -108,7 +108,6 @@ else:
 
 print("\n")
 print("<INFO > TRANSACTION DETAILS ")
-#print('transaction type: ' + str(txsType[i])) 
 print('<INFO > amount: ' + ' ' + str(txsAmount) + ' XTL') 
 if txsSelected==0:
 	print('<INFO > destination: ' + str(MERCHANT_ADDR)) 
@@ -126,19 +125,25 @@ for i in range (0, len(readers_avail)):
 	try:
 		activeReader = activate_card(readers_avail[i])
 	except Exceptions.NoCardException:
-		sys.stdout.write(" FAIL!\n")
+		sys.stdout.write(" FAIL! no card detected on this reader.\n")
 		continue
+	print(" CARD FOUND! Try to activate now.") 	
 	if stelliteCard_select(activeReader) == False:
-		sys.stdout.write(" FAIL!\n")
+		sys.stdout.write(" FAIL! failed to activate card. Maybe applet is not installed?\n")
 		continue	
-	result = stelliteCard_scanReaders(activeReader)
-	result = [ctypes.c_ubyte(i).value for i in result]
-	result = ''.join(chr(i) for i in result)
-	if result != cardVersion:
-		sys.stdout.write(" Wrong card version!\n")
-	else:
-		sys.stdout.write(" " + result + " FOUND!\n")	
-		break		
+	print("<INFO > CARD ACTIVATED! Try to detect card version now.")	
+	try:	
+		result = stelliteCard_getVersion(activeReader)
+		result = [ctypes.c_ubyte(i).value for i in result]
+		result = ''.join(chr(i) for i in result)
+		if result != cardVersion:
+			print("<INFO >  Wrong card version!\n")
+		else:
+			print("<INFO > " + result + " FOUND!\n")	
+			break		
+	except:
+		exit_message("<ERROR> UNKNOWN CARD ERROR.")
+		
 if scanAttempt == len(readers_avail):
 	print("<ERROR> NO READER/CARD FOUND!") 
 	sys.exit()
@@ -146,49 +151,52 @@ if scanAttempt == len(readers_avail):
 # request to encrypt txs	
 result = stelliteCard_reqTxsEncrypt(activeReader, MERCHANT_ADDR, txsSelected, int(txsAmount))	
 if result == False:
-	print('<ERROR> CARD ENCRYPT ERROR!')
+	exit_message('<ERROR> CARD ENCRYPT ERROR!')
 else:
 	print('<INFO > CARD ENCRYPT OK!')
 	print('<INFO > CIPHERED DATA FROM CARD: ')
 	print("\n" + ''.join(chr(i) for i in result) + "\n")
 	
+# send encrypted data to server
 
-# TODO send encrypted data to server
-'''	
+oneTimeSession = requests.Session() 
+
 payload = {"cipherTxsRequest":json.dumps(result)}
-resp=requests.post(url,data=payload,headers=headers)
-print(resp.__dict__)
-print(resp.content)
+resp=oneTimeSession.post((url+"transfer"),data=payload,headers=headers)
+myCookies = resp.cookies
 if(resp.status_code!=200):
 	exit_message('ERROR when sending request...')
 else:
-	signature = resp.content
-'''
-
-# dummy signature for now
-signature = "afahchfhudshfkashdkhaskfhddu67f863rgf7t7t37tf78387f7tf2c7t47rct3ch7ct7c6t36htcf673ct763ccgt67ft36xh3tf673tf763t6xt36ft64tf67ht36fxt36tf67t346ftxh672t673tf76hx346jyxwfebtbfxfytdftefwxcqnxyxgyfq364n4623c4296tt2f364c63cn6t32nxuwrygfc82g467gfc64y6f738y7fnhx7y1"
+	result = resp.content
 
 # send txs signature to card
-result = stelliteCard_verifyTxs(activeReader, signature)
-if result == False:
-	print('<ERROR> SIGNATURE VERIFICATION PROCESS FAIL!')
-else:
+signature = json.loads(result)
+result = False
+try:
+	result = stelliteCard_verifyTxs(activeReader, signature['sig'])
+except:
+	pass	
+if signature['result'] == 'TXS_CREDENTIAL_ERR':
+	exit_message('<ERROR> SIGNATURE VERIFICATION PROCESS FAIL!')
+if signature['result'] == 'TXS_BALANCE_ERR':
+	exit_message('<ERROR> NOT ENOUGH FUNDS!')		
+if signature['result'] == 'TXS_SIG_OK':
 	print('<INFO > SIGNATURE VERIFICATION PROCESS OK!')
 	print('<INFO > CIPHERED DATA FROM CARD: ')
 	print("\n" + ''.join(chr(i) for i in result) + "\n")
-	
+else:
+	exit_message('<ERROR> UNKNOWN ERROR!')
+		
 # TODO send encrypted data to server
-'''	
-payload = {"cipherTxsRequest":json.dumps(result)}
-resp=requests.post(url,data=payload,headers=headers)
-print(resp.__dict__)
-print(resp.content)
+payload = {"cipherTxsRequest":json.dumps(result)} 
+resp=oneTimeSession.post((url+"verify"),data=payload,headers=headers)
+
 if(resp.status_code!=200):
 	exit_message('ERROR when sending request...')
 else:
-	signature = resp.content
-'''
-
+	result = resp.content
+	sys.stdout.write('<INFO > TRANSACTION RESULT: ')
+	sys.stdout.write(result+"\n")
 
 
 
