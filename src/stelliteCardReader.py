@@ -116,37 +116,52 @@ else:
 print("\n")
 
 # auto scan available readers
-readers_avail = list_readers()
-activeReader = None
-scanAttempt = 0
-for i in range (0, len(readers_avail)):
-	scanAttempt+=1
-	sys.stdout.write("<INFO > SCANNING: " + str(readers_avail[i]))
-	try:
-		activeReader = activate_card(readers_avail[i])
-	except Exceptions.NoCardException:
-		sys.stdout.write(" FAIL! no card detected on this reader.\n")
-		continue
-	print(" CARD FOUND! Try to activate now.") 	
-	if stelliteCard_select(activeReader) == False:
-		sys.stdout.write(" FAIL! failed to activate card. Maybe applet is not installed?\n")
-		continue	
-	print("<INFO > CARD ACTIVATED! Try to detect card version now.")	
-	try:	
-		result = stelliteCard_getVersion(activeReader)
-		result = [ctypes.c_ubyte(i).value for i in result]
-		result = ''.join(chr(i) for i in result)
-		if result != cardVersion:
-			print("<INFO >  Wrong card version!\n")
-		else:
-			print("<INFO > " + result + " FOUND!\n")	
-			break		
-	except:
-		exit_message("<ERROR> UNKNOWN CARD ERROR.")
-		
-if scanAttempt == len(readers_avail):
-	print("<ERROR> NO READER/CARD FOUND!") 
-	sys.exit()
+def scanReaders():
+	readers_avail = list_readers()
+	activeReader = None
+	scanAttempt = 0
+	for i in range (0, len(readers_avail)):
+		scanAttempt+=1
+		#sys.stdout.write("<INFO > SCANNING: " + str(readers_avail[i]))
+		try:
+			activeReader = activate_card(readers_avail[i])
+		except Exceptions.NoCardException:
+			#sys.stdout.write(" FAIL! no card detected on this reader.\n")
+			continue
+		#print(" CARD FOUND! Try to activate now.")
+		try: 	
+			if stelliteCard_select(activeReader) == False:
+				#sys.stdout.write(" FAIL! failed to activate card. Maybe applet is not installed?\n")
+				continue
+		except:
+				#sys.stdout.write(" FAIL! failed to activate card. Maybe applet is not installed?\n")
+				continue					
+		#print("<INFO > CARD ACTIVATED! Try to detect card version now.")	
+		try:	
+			result = stelliteCard_getVersion(activeReader)
+			result = [ctypes.c_ubyte(i).value for i in result]
+			result = ''.join(chr(i) for i in result)
+			if result != cardVersion:
+				pass
+				#print("<INFO >  Wrong card version!\n")
+			else:
+				print("<INFO > " + result + " FOUND!\n")	
+				break		
+		except:
+			#exit_message("<ERROR> UNKNOWN CARD ERROR.")
+			pass
+	if scanAttempt == len(readers_avail):
+		#print("<ERROR> NO READER/CARD FOUND!") 
+		#sys.exit()
+		return False
+	else:
+		return activeReader	
+
+sys.stdout.write("<INFO >  Scan for card...\n")	
+activeReader = False	
+while activeReader == False:
+	activeReader = scanReaders()
+	pass		
 	
 # request to encrypt txs	
 result = stelliteCard_reqTxsEncrypt(activeReader, MERCHANT_ADDR, txsSelected, int(txsAmount))	
